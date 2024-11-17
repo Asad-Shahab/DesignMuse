@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Get Started</title>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="button-group">
+            <button id="createRectangle">Create Rectangle</button>
+            <button id="captureWorkspace">Capture Workspace</button>
+        </div>
+
+        <div id="captureBlock">
+            <div id="captureText" contenteditable="true" data-placeholder="Describe what specific feedback you need, e.g., 'How can I make the text stand out more?' or 'Does the color scheme convey a professional look?'"></div>
+            <button id="confirmCapture">Save</button>
+        </div>
+
+        <div id="captureDisplay"></div>
+    </div>
+
+    <script type="module" src="ui/index.js"></script>
+</body>
+</html>
