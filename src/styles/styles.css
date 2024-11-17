@@ -141,6 +141,29 @@ img {
     font-style: italic;
 }
 
+.analyzing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #888;
+    font-style: italic;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #bc5a45;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 [contenteditable="true"]:hover {
     background-color: #585858;
 }
