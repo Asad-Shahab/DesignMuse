@@ -1,6 +1,6 @@
 import addOnUISdk from "https://new.express.adobe.com/static/add-on-sdk/sdk.js";
 
-const GEMINI_API_KEY = 'AIzaSyD-4AXRjiQ3MtYHqpLG7q51b3QkKwBUAd0';
+const GEMINI_API_KEY = 'YOUR-API-KEY-HERE';
 let genAI = null;
 
 // Function to ensure SDK is loaded
@@ -30,17 +30,20 @@ async function initializeGemini() {
 
 // Format AI response for better readability
 function formatAIResponse(response) {
-    const sections = response.split(/(?=\d\. )/);
+    const sections = response.split(/(?=•)/);
     
     return sections.map(section => {
-        if (/^\d\. /.test(section)) {
+        // Replace multiple line breaks with a single smaller break
+        const formattedSection = section.trim()
+            .replace(/\n+/g, '<br>') // Replace any number of line breaks with a single <br>
+            .replace(/•/g, '<br>•'); // Add small break before bullet points except the first one
+        if (section.trim().startsWith('•')) {
             return `<div class="analysis-section">
-                <h3 class="analysis-title">${section.split('\n')[0]}</h3>
-                <p class="analysis-content">${section.split('\n').slice(1).join('\n')}</p>
+                <p class="analysis-content">${formattedSection}</p>
             </div>`;
         }
         return `<div class="analysis-section">
-            <p class="analysis-content">${section}</p>
+            <p class="analysis-content">${formattedSection}</p>
         </div>`;
     }).join('');
 }
@@ -67,25 +70,47 @@ async function analyzeWithGemini(imageBase64, userPrompt) {
             console.log("Initializing Gemini...");
             await initializeGemini();
         }
-
+        
         console.log("Creating model instance...");
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const systemPrompt = `Analyze the attached image of the current design workspace and address the user's specific question: ${userPrompt}.
 
-        const systemPrompt = `Analyze the attached image of the current design workspace, and respond to the user's specific question: ${userPrompt}. 
-        Additionally, provide focused, concise feedback on:
-        1. Layout – suggest improvements for better structure and alignment.
-        2. Color scheme – recommend adjustments for harmony and contrast.
-        3. Typography – assess readability and visual impact.
-        4. Overall visual balance – propose changes for better flow and proportion.
-        Prioritize three high-impact changes for the design's visual quality and coherence.`;
+If the user's question is specific (e.g., colors, typography, layout), provide a direct response focusing only on that aspect.
+
+If the input is general or unclear, choose the two most relevant areas from this list:
+
+Layout – A key suggestion to improve structure and alignment.
+
+Color – The most impactful adjustment for color harmony or contrast.
+
+Typography – The main change for better text readability or visual impact.
+
+Balance – An essential tweak to enhance visual flow and balance.
+
+Each suggestion should be kept to 1-2 sentences.
+
+Use at least one line break after each sentence.
+
+Separate points with a double line break to enhance readability
+
+Add two line breaks between distinct suggestions to improve readability.
+
+Avoid any special formatting like asterisks or bold text in your response.
+
+Do not state which aspects were chosen. Simply provide advice naturally.
+
+Keep your feedback specific, actionable, and concise.`;
+
         
+
+
         const imagePart = {
             inlineData: {
                 data: imageBase64,
                 mimeType: "image/jpeg"
             }
         };
-
+        
         console.log("Sending request to Gemini API");
         const result = await model.generateContent([systemPrompt, imagePart]);
         console.log("Received response from Gemini API");
@@ -108,19 +133,19 @@ addOnUISdk.ready.then(async () => {
     } catch (error) {
         console.error("Initial Gemini initialization failed:", error);
     }
-
-    const createRectangleButton = document.getElementById("createRectangle");
+    
+    //const createRectangleButton = document.getElementById("createRectangle");
     const captureWorkspaceButton = document.getElementById("captureWorkspace");
     const captureBlock = document.getElementById("captureBlock");
     const captureText = document.getElementById("captureText");
     const confirmCaptureButton = document.getElementById("confirmCapture");
     const captureDisplay = document.getElementById("captureDisplay");
-
+    
     try {
         const { runtime } = addOnUISdk.instance;
         const sandboxProxy = await runtime.apiProxy("documentSandbox");
-
-        // Create Rectangle Button Handler
+        
+        /* // Create Rectangle Button Handler
         createRectangleButton.addEventListener("click", async () => {
             try {
                 console.log("Creating rectangle...");
@@ -129,8 +154,8 @@ addOnUISdk.ready.then(async () => {
                 console.error("Error creating rectangle:", error);
                 alert("Failed to create rectangle. Please try again.");
             }
-        });
-
+        }); */
+        
         // Capture Workspace Button Handler
         captureWorkspaceButton.addEventListener("click", () => {
             console.log("Opening capture interface...");
@@ -138,7 +163,7 @@ addOnUISdk.ready.then(async () => {
             captureText.innerHTML = '';
             captureText.focus();
         });
-
+        
         // Save Button Handler
         confirmCaptureButton.addEventListener("click", async () => {
             const text = captureText.innerText.trim();
@@ -147,16 +172,16 @@ addOnUISdk.ready.then(async () => {
                 alert("Please enter your feedback request.");
                 return;
             }
-
+            
             try {
                 confirmCaptureButton.disabled = true;
                 confirmCaptureButton.textContent = 'Analyzing...';
-
+                
                 const response = await addOnUISdk.app.document.createRenditions({
                     range: "currentPage",
                     format: "image/jpeg",
                 });
-
+                
                 captureDisplay.innerHTML = `
                     <div class="feedback-container">
                         <div class="feedback-box">
@@ -164,7 +189,7 @@ addOnUISdk.ready.then(async () => {
                             <div class="feedback-text">${text}</div>
                         </div>
                         <div class="feedback-box">
-                            <div class="feedback-label">Design Analysis</div>
+                            <div class="feedback-label">Design Feedback</div>
                             <div class="feedback-text analyzing">
                                 <div class="loading-spinner"></div>
                                 Analyzing your design...
@@ -172,14 +197,14 @@ addOnUISdk.ready.then(async () => {
                         </div>
                     </div>
                 `;
-
+                
                 const base64Image = await blobToBase64(response[0].blob);
                 const analysis = await analyzeWithGemini(base64Image, text);
                 
                 const aiResponseBox = captureDisplay.querySelector('.analyzing');
                 aiResponseBox.innerHTML = formatAIResponse(analysis);
                 aiResponseBox.classList.remove('analyzing');
-
+                
             } catch (error) {
                 console.error("Error:", error);
                 captureDisplay.innerHTML = `
@@ -198,10 +223,10 @@ addOnUISdk.ready.then(async () => {
                 confirmCaptureButton.textContent = 'Save';
             }
         });
-
-        createRectangleButton.disabled = false;
+        
+        //createRectangleButton.disabled = false;
         console.log("Add-on initialization complete");
-
+        
     } catch (error) {
         console.error("Error initializing add-on:", error);
         alert("Failed to initialize the add-on. Please refresh the page.");
