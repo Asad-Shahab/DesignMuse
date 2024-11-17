@@ -220,7 +220,7 @@ addOnUISdk.ready.then(async () => {
                 captureBlock.style.display = "none";
                 captureText.innerHTML = '';
                 confirmCaptureButton.disabled = false;
-                confirmCaptureButton.textContent = 'Save';
+                confirmCaptureButton.textContent = 'Get Design Feedback';
             }
         });
         
