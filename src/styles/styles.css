@@ -229,3 +229,48 @@ body {
     display: inline-block;
     padding: 12px 24px;
 }
+
+/* API Key Section Styles */
+#apiKeySection {
+    text-align: center;
+    padding: 20px;
+}
+
+#apiKeySection h2 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.api-key-input {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+#apiKeyInput {
+    background-color: #404040;
+    border: 1px solid #505050;
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    padding: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+#apiKeyInput:focus {
+    outline: none;
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+    background-color: #585858;
+}
+
+#apiKeyInput::placeholder {
+    color: #999;
+}

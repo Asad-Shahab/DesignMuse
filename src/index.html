@@ -12,18 +12,27 @@
 </head>
 <body>
     <div class="container">
-        <div class="button-group">
-            <button id="captureWorkspace" class="primary-button">Analyze Design</button>
+        <!-- Add API Key Section -->
+        <div id="apiKeySection">
+            <h2>Add Gemini API Key</h2>
+            <div class="api-key-input">
+                <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key">
+                <button id="saveApiKey" class="primary-button">Save API Key</button>
+            </div>
         </div>
 
-        <div id="captureBlock">
-            <div id="captureText" contenteditable="true" data-placeholder="Describe what specific feedback you need, e.g., 'How can I make the text stand out more?' or 'Does the color scheme convey a professional look?'"></div>
-            <button id="confirmCapture" class="primary-button">Get Design Feedback</button>
+        <!-- Main App Section (will be hidden initially) -->
+        <div id="mainAppSection" style="display: none;">
+            <div class="button-group">
+                <button id="captureWorkspace" class="primary-button">Analyze Design</button>
+            </div>
+            <div id="captureBlock">
+                <div id="captureText" contenteditable="true" data-placeholder="Describe what specific feedback you need, e.g., 'How can I make the text stand out more?' or 'Does the color scheme convey a professional look?'"></div>
+                <button id="confirmCapture" class="primary-button">Get Design Feedback</button>
+            </div>
+            <div id="captureDisplay"></div>
         </div>
-
-        <div id="captureDisplay"></div>
     </div>
-
     <script type="module" src="ui/index.js"></script>
 </body>
 </html>

@@ -1,7 +1,32 @@
 import addOnUISdk from "https://new.express.adobe.com/static/add-on-sdk/sdk.js";
 
-const GEMINI_API_KEY = 'YOUR-API-KEY-HERE';
+let GEMINI_API_KEY = localStorage.getItem('geminiApiKey');
 let genAI = null;
+
+// DOM Elements
+const apiKeySection = document.getElementById('apiKeySection');
+const mainAppSection = document.getElementById('mainAppSection');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveApiKeyButton = document.getElementById('saveApiKey');
+const captureWorkspaceButton = document.getElementById("captureWorkspace");
+const captureBlock = document.getElementById("captureBlock");
+const captureText = document.getElementById("captureText");
+const confirmCaptureButton = document.getElementById("confirmCapture");
+const captureDisplay = document.getElementById("captureDisplay");
+
+// Function to handle API key saving
+function handleApiKeySave() {
+    const apiKey = apiKeyInput.value.trim();
+    if (apiKey) {
+        localStorage.setItem('geminiApiKey', apiKey);
+        GEMINI_API_KEY = apiKey;
+        apiKeySection.style.display = 'none';
+        mainAppSection.style.display = 'block';
+        initializeGemini(); // Reinitialize Gemini with new API key
+    } else {
+        alert('Please enter a valid API key');
+    }
+}
 
 // Function to ensure SDK is loaded
 async function ensureSDKLoaded(timeout = 5000) {
@@ -24,6 +49,10 @@ async function initializeGemini() {
         return genAI;
     } catch (error) {
         console.error("Error initializing Gemini:", error);
+        // If initialization fails, show API key input again
+        apiKeySection.style.display = 'block';
+        mainAppSection.style.display = 'none';
+        localStorage.removeItem('geminiApiKey');
         throw error;
     }
 }
@@ -101,9 +130,6 @@ Do not state which aspects were chosen. Simply provide advice naturally.
 
 Keep your feedback specific, actionable, and concise.`;
 
-        
-
-
         const imagePart = {
             inlineData: {
                 data: imageBase64,
@@ -127,34 +153,35 @@ Keep your feedback specific, actionable, and concise.`;
 addOnUISdk.ready.then(async () => {
     console.log("AddOnUISdk is ready");
     
-    // Try to initialize Gemini
-    try {
-        await initializeGemini();
-    } catch (error) {
-        console.error("Initial Gemini initialization failed:", error);
+    // Check if API key exists
+    if (!GEMINI_API_KEY) {
+        apiKeySection.style.display = 'block';
+        mainAppSection.style.display = 'none';
+        
+        // Add event listener for API key save button
+        saveApiKeyButton.addEventListener('click', handleApiKeySave);
+        
+        // Add enter key support for API key input
+        apiKeyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleApiKeySave();
+            }
+        });
+    } else {
+        apiKeySection.style.display = 'none';
+        mainAppSection.style.display = 'block';
+        
+        // Try to initialize Gemini
+        try {
+            await initializeGemini();
+        } catch (error) {
+            console.error("Initial Gemini initialization failed:", error);
+        }
     }
-    
-    //const createRectangleButton = document.getElementById("createRectangle");
-    const captureWorkspaceButton = document.getElementById("captureWorkspace");
-    const captureBlock = document.getElementById("captureBlock");
-    const captureText = document.getElementById("captureText");
-    const confirmCaptureButton = document.getElementById("confirmCapture");
-    const captureDisplay = document.getElementById("captureDisplay");
     
     try {
         const { runtime } = addOnUISdk.instance;
         const sandboxProxy = await runtime.apiProxy("documentSandbox");
-        
-        /* // Create Rectangle Button Handler
-        createRectangleButton.addEventListener("click", async () => {
-            try {
-                console.log("Creating rectangle...");
-                await sandboxProxy.createRectangle();
-            } catch (error) {
-                console.error("Error creating rectangle:", error);
-                alert("Failed to create rectangle. Please try again.");
-            }
-        }); */
         
         // Capture Workspace Button Handler
         captureWorkspaceButton.addEventListener("click", () => {
@@ -224,7 +251,6 @@ addOnUISdk.ready.then(async () => {
             }
         });
         
-        //createRectangleButton.disabled = false;
         console.log("Add-on initialization complete");
         
     } catch (error) {
