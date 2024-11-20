@@ -28,8 +28,8 @@ This Adobe Express add-on helps designers improve work by providing AI-powered d
 3. Node.js installed on your machine
 
 ### Installation
-```bash
 1. Clone the repository
+```bash
 git clone https://github.com/Asad-Shahab/DesignMuse/.git
 cd designmuse
 ```
