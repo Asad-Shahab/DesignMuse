@@ -30,7 +30,7 @@ This Adobe Express add-on helps designers improve work by providing AI-powered d
 ### Installation
 1. Clone the repository
 ```bash
-git clone https://github.com/Asad-Shahab/DesignMuse/.git
+git clone https://github.com/Asad-Shahab/DesignMuse/
 cd designmuse
 ```
 
