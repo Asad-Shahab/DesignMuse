@@ -1,6 +1,6 @@
 import addOnUISdk from "https://new.express.adobe.com/static/add-on-sdk/sdk.js";
 
-let GEMINI_API_KEY = localStorage.getItem('geminiApiKey');
+let GEMINI_API_KEY = deobfuscateKey(localStorage.getItem('geminiApiKey'));
 let genAI = null;
 
 // DOM Elements
@@ -14,17 +14,62 @@ const captureText = document.getElementById("captureText");
 const confirmCaptureButton = document.getElementById("confirmCapture");
 const captureDisplay = document.getElementById("captureDisplay");
 
+// Add these utility functions after the variable declarations
+function obfuscateKey(key) {
+    return "dm_" + btoa(key);
+}
+
+function deobfuscateKey(obfuscatedKey) {
+    if (obfuscatedKey && obfuscatedKey.startsWith("dm_")) {
+        try {
+            return atob(obfuscatedKey.substring(3));
+        } catch (e) {
+            console.error("Error deobfuscating key:", e);
+            return null;
+        }
+    }
+    return obfuscatedKey;
+}
+
 // Function to handle API key saving
-function handleApiKeySave() {
+async function handleApiKeySave() {
     const apiKey = apiKeyInput.value.trim();
-    if (apiKey) {
-        localStorage.setItem('geminiApiKey', apiKey);
-        GEMINI_API_KEY = apiKey;
-        apiKeySection.style.display = 'none';
-        mainAppSection.style.display = 'block';
-        initializeGemini(); // Reinitialize Gemini with new API key
-    } else {
-        alert('Please enter a valid API key');
+    const saveText = document.getElementById("saveApiKeyText");
+    const saveSpinner = document.getElementById("saveApiKeySpinner");
+    const apiKeyError = document.getElementById("apiKeyError");
+    
+    apiKeyError.style.display = "none";
+    
+    if (!apiKey) {
+        apiKeyError.textContent = "Please enter an API key";
+        apiKeyError.style.display = "block";
+        return;
+    }
+    
+    try {
+        saveApiKeyButton.disabled = true;
+        saveText.textContent = "Validating...";
+        saveSpinner.style.display = "inline-block";
+        
+        const validationResult = await validateApiKey(apiKey);
+        
+        if (validationResult.valid) {
+            localStorage.setItem('geminiApiKey', obfuscateKey(apiKey));
+            GEMINI_API_KEY = apiKey;
+            await initializeGemini();
+            toggleAppView('main');
+        } else {
+            apiKeyError.textContent = validationResult.message;
+            apiKeyError.style.display = "block";
+        }
+    } catch (error) {
+        console.error("Error during API key validation:", error);
+        apiKeyError.textContent = "An unexpected error occurred. Please try again.";
+        apiKeyError.style.display = "block";
+    } finally {
+        saveApiKeyButton.disabled = false;
+        saveText.textContent = "Save API Key";
+        saveSpinner.style.display = "none";
     }
 }
 
@@ -44,14 +89,21 @@ async function ensureSDKLoaded(timeout = 5000) {
 async function initializeGemini() {
     try {
         await ensureSDKLoaded();
+        
+        const storedKey = localStorage.getItem('geminiApiKey');
+        const decodedKey = deobfuscateKey(storedKey);
+        
+        if (!decodedKey) {
+            throw new Error("No valid API key found");
+        }
+        
+        GEMINI_API_KEY = decodedKey;
         genAI = new window.GoogleGenerativeAI(GEMINI_API_KEY);
         console.log("Gemini initialized successfully");
         return genAI;
     } catch (error) {
         console.error("Error initializing Gemini:", error);
-        // If initialization fails, show API key input again
-        apiKeySection.style.display = 'block';
-        mainAppSection.style.display = 'none';
+        toggleAppView('apiKey');
         localStorage.removeItem('geminiApiKey');
         throw error;
     }
@@ -149,9 +201,61 @@ Keep your feedback specific, actionable, and concise.`;
     }
 }
 
+// Add these new functions before initializeGemini
+async function validateApiKey(apiKey) {
+    try {
+        await ensureSDKLoaded();
+        const tempGenAI = new window.GoogleGenerativeAI(apiKey);
+        const model = tempGenAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        
+        const result = await model.generateContent("Test connection. Reply with 'OK' only.");
+        await result.response;
+        
+        return { valid: true };
+    } catch (error) {
+        console.error("API key validation error:", error);
+        
+        let errorMessage = "Invalid API key. Please check and try again.";
+        
+        if (error.message?.toLowerCase().includes("rate limit")) {
+            errorMessage = "API rate limit exceeded. Please try again later.";
+        } else if (error.message?.toLowerCase().includes("permission")) {
+            errorMessage = "You don't have permission to access this model with this API key.";
+        } else if (error.message?.toLowerCase().includes("network")) {
+            errorMessage = "Network error. Please check your connection and try again.";
+        }
+        
+        return { valid: false, message: errorMessage };
+    }
+}
+
+function toggleAppView(view) {
+    if (view === 'main') {
+        apiKeySection.style.display = 'none';
+        mainAppSection.style.display = 'block';
+    } else if (view === 'apiKey') {
+        apiKeySection.style.display = 'block';
+        mainAppSection.style.display = 'none';
+        
+        const backButton = document.getElementById("backToApp");
+        backButton.style.display = GEMINI_API_KEY ? "block" : "none";
+    }
+}
+
 // Initialize the add-on
 addOnUISdk.ready.then(async () => {
     console.log("AddOnUISdk is ready");
+    
+    const settingsButton = document.getElementById("settingsButton");
+    const backToAppButton = document.getElementById("backToApp");
+    
+    settingsButton.addEventListener("click", () => {
+        toggleAppView('apiKey');
+    });
+    
+    backToAppButton.addEventListener("click", () => {
+        toggleAppView('main');
+    });
     
     // Check if API key exists
     if (!GEMINI_API_KEY) {
